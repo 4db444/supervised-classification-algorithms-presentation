@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Classification supervisée — 4 algorithmes</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,800&family=IBM+Plex+Mono:wght@500&family=Instrument+Sans:wght@400;600&display=swap">
+<style>
+:root{--paper:#f4efe4;--card:#fffdf6;--ink:#1d2433;--coral:#e4572e;--teal:#1f8a8a;--mus:#e9b44c;--blue:#3b4a8c;--muted:#5d6577;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);background-image:radial-gradient(#d8d0bd 1.2px,transparent 1.2px);background-size:22px 22px;color:var(--ink);font:400 17px/1.5 "Instrument Sans",system-ui,sans-serif;overflow:hidden}
+#deck{display:flex;height:100%;transition:transform .55s cubic-bezier(.7,0,.2,1)}
+.s{flex:0 0 100%;height:100%;overflow-y:auto;padding:18px clamp(18px,5vw,64px) 76px;display:flex;align-items:center}
+.in{width:100%;max-width:1080px;margin:auto}
+.k{font:500 13px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--coral);margin-bottom:6px}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:800;line-height:1.04;margin:0 0 14px;letter-spacing:-.02em}
+h1{font-size:clamp(38px,6.6vw,78px)}h2{font-size:clamp(26px,3.8vw,44px)}
+h1 em,h2 em{font-style:normal;background:linear-gradient(transparent 62%,var(--mus) 62%)}
+.g{display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:start}
+.g>*{min-width:0}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:6px 6px 0 var(--ink);padding:16px}
+.t p{margin:0 0 9px}.t b{font-weight:600}
+.f{font:500 12.5px/1.55 "IBM Plex Mono",monospace;background:var(--ink);color:var(--paper);padding:8px 10px;border-radius:8px;margin-bottom:11px;max-width:100%;overflow-x:auto;white-space:nowrap}
+.f i{font-style:normal;color:var(--mus)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.chip{border:2px solid var(--ink);border-radius:99px;padding:2px 11px;font-size:13.5px;background:var(--card)}
+.chip.k2{border-color:var(--teal)}.chip.k3{border-color:var(--blue)}.chip.k4{border-color:var(--coral)}
+.uses{margin-top:10px;border-top:2px dashed var(--ink);padding-top:8px}
+.uses h3{font:500 12px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.uses li{font-size:14.5px;margin:0 0 2px}
+ul{margin:0;padding-left:18px}
+.step{display:flex;gap:9px;align-items:flex-start;margin-bottom:7px}
+.step i{flex:none;width:25px;height:25px;border-radius:50%;background:var(--teal);color:#fff;font:600 13px "IBM Plex Mono",monospace;display:grid;place-items:center;font-style:normal}
+label{font:500 13px "IBM Plex Mono",monospace;display:flex;justify-content:space-between;gap:8px}
+input[type=range]{width:100%;accent-color:var(--coral);margin:3px 0 9px}
+canvas,svg{display:block;width:100%;max-width:100%}
+canvas{max-width:290px;margin:0 auto;border:2px solid var(--ink);border-radius:8px}
+#lr,#sv{max-width:452px;margin:0 auto}
+.cv1{cursor:default}.cv2{cursor:crosshair}
+.stats{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.stat{flex:1;min-width:96px;border:2px solid var(--ink);border-radius:10px;padding:4px 9px;font:500 12px "IBM Plex Mono",monospace}
+.stat b{display:block;font:800 22px Fraunces,serif;line-height:1.2}
+.stat.warn{border-color:var(--coral);background:#fdeee7}
+.btn{font:600 15px "Instrument Sans",sans-serif;border:2px solid var(--ink);background:var(--mus);border-radius:10px;padding:8px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.note{font-size:13.5px;line-height:1.45;color:var(--muted);margin:7px 0 0}
+.note b{color:var(--ink)}
+.note.bad{color:var(--coral)}
+.votes{display:flex;flex-wrap:wrap;gap:3px;margin-top:9px}
+.votes span{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--ink)}
+.rules{font:500 11.5px/1.5 "IBM Plex Mono",monospace;background:#f0ead9;border:2px solid var(--ink);border-radius:8px;padding:7px 9px;margin-top:9px;max-width:100%;max-height:80px;overflow:auto;white-space:pre}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tab{font:600 14px "Instrument Sans",sans-serif;border:2px solid var(--ink);background:var(--card);border-radius:99px;padding:5px 14px;cursor:pointer}
+.tab.on{background:var(--ink);color:var(--paper)}
+.row{display:grid;grid-template-columns:160px 1fr 30px;gap:10px;align-items:center;margin:8px 0;font-size:15px}
+.tr{height:26px;border:2px solid var(--ink);border-radius:8px;background:#efe9d9;overflow:hidden}
+.fl{height:100%;width:0;transition:width .6s cubic-bezier(.3,1.3,.5,1)}
+.row b{font:500 14px "IBM Plex Mono",monospace}
+.mini{font:500 12.5px "IBM Plex Mono",monospace;color:var(--muted);margin-top:14px;padding-top:10px;border-top:2px dashed var(--ink)}
+.pick{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.pk{border:2px solid var(--ink);border-radius:12px;padding:11px 13px;background:var(--card);box-shadow:4px 4px 0 var(--ink)}
+.pk h3{margin:0 0 5px;font:800 17px Fraunces,serif}
+.pk p{margin:0;font-size:14.5px;color:var(--muted)}
+.pk span{display:inline-block;width:11px;height:11px;border-radius:3px;border:1.5px solid var(--ink);margin-right:6px;vertical-align:-1px}
+.pk.k2{border-left:7px solid var(--teal)}.pk.k3{border-left:7px solid var(--mus)}
+.pk.k4{border-left:7px solid var(--coral)}.pk.k5{border-left:7px solid var(--blue)}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:14px;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--paper) 40%)}
+.nav button{width:42px;height:42px;border-radius:50%;border:2px solid var(--ink);background:var(--card);font-size:18px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.dots{display:flex;gap:8px}.dots i{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;background:var(--card)}.dots i.on{background:var(--coral)}
+.ct{font:500 13px "IBM Plex Mono",monospace;min-width:52px;text-align:center}
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:center}
+@media(max-width:880px){.g,.hero,.pick{grid-template-columns:1fr}.row{grid-template-columns:120px 1fr 26px}.s{align-items:flex-start}}
+@media(max-height:780px){
+.s{padding:12px clamp(18px,5vw,64px) 62px}
+h1{font-size:clamp(32px,5.4vw,62px)}h2{font-size:clamp(23px,3.3vw,37px)}
+h1,h2{margin-bottom:11px}
+.f{font-size:11.5px;padding:6px 9px;margin-bottom:9px}
+.t p{margin:0 0 7px}
+.uses{margin-top:8px;padding-top:7px}.uses li{font-size:13.5px}
+canvas{max-width:262px}#lr,#sv{max-width:412px}
+.rules{max-height:62px;font-size:11px;padding:6px 8px}
+.note{font-size:13px;margin-top:6px}
+.nav{padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+.nav button{width:38px;height:38px;font-size:16px}
+.stat{padding:3px 8px}.stat b{font-size:20px}
+.g{gap:16px}
+}
+@media(max-width:880px){body{font-size:16px}.s{padding-bottom:70px}h2{margin-bottom:12px}}
+@media(max-height:680px){
+body{font-size:15.5px}
+.s{padding:10px clamp(16px,4vw,48px) 56px}
+h2{font-size:clamp(21px,2.8vw,31px)}h1{font-size:clamp(30px,5vw,54px)}
+.f{font-size:11px;padding:5px 8px;margin-bottom:8px}
+.t p{margin:0 0 6px}
+.uses{margin-top:7px;padding-top:6px}.uses li{font-size:13px}.uses h3{font-size:11px}
+canvas{max-width:238px}#lr,#sv{max-width:372px}
+.rules{max-height:52px}
+.note{font-size:12.5px}
+.nav{padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px))}
+.nav button{width:34px;height:34px;font-size:15px}
+.stat{padding:2px 7px}.stat b{font-size:18px}
+.step{margin-bottom:5px}.step i{width:22px;height:22px;font-size:12px}
+}
+@media print{body{overflow:visible;height:auto}#deck{display:block;height:auto;transition:none}.s{page-break-after:always;break-after:page;height:auto;min-height:96vh;align-items:flex-start}.nav{display:none}}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- 00 · intro -->
+<section class="s"><div class="in hero">
+<div><div class="k">Machine Learning · Classification supervisée</div>
+<h1>Classer, c'est tracer une <em>frontière</em>.</h1>
+<p style="font-size:18px;max-width:34ch">Objectif : comprendre le <b>principe</b> et les <b>cas d'usage</b> de 4 algorithmes. Chacun trace sa frontière à sa manière.</p>
+<div class="chips"><span class="chip">01 · Régression logistique</span><span class="chip">02 · Arbre de décision</span><span class="chip">03 · Random Forest</span><span class="chip">04 · SVM</span></div>
+<div class="mini">Démo jouable : 90 points d'entraînement, 400 de test, frontière interactive.</div></div>
+<div class="card"><canvas id="c0" width="340" height="340" class="cv1"></canvas>
+<p class="note" style="margin:10px 0 0">Frontière d'une <b>forêt de 30 arbres</b> sur le jeu de démonstration.</p></div>
+</div></section>
+
+<!-- 01 · logistic -->
+<section class="s"><div class="in">
+<div class="k">01 · Régression logistique</div>
+<h2>Une probabilité, via une courbe en <em>S</em></h2>
+<div class="g"><div class="t">
+<div class="f">z = <i>w</i>·x + b &nbsp;&nbsp;→&nbsp;&nbsp; p = σ(z) = 1 / (1 + e<sup>−z</sup>)<br>ŷ = 1 si p &gt; 0,5 &nbsp;&nbsp;·&nbsp;&nbsp; perte = −Σ [ y·log p + (1−y)·log(1−p) ]</div>
+<p><b>Principe.</b> On pondère les variables (<i>w</i>·x), on ajoute un biais <i>b</i>, puis la <b>sigmoïde</b> transforme ce score en probabilité entre 0 et 1.</p>
+<p>La frontière est la droite <i>w</i>·x + b = 0. Elle est <b>linéaire</b> : deux classes qui se chevauchent ne seront jamais bien séparées.</p>
+<div class="uses"><h3>Cas d'usage</h3><ul>
+<li><b>Risque crédit, scoring</b> — le régulateur exige la probabilité de défaut, pas seulement la classe.</li>
+<li><b>Spam, diagnostic médical</b> — décision binaire sur variables chiffrées.</li>
+<li>Modèle de référence : on teste toujours le linéaire avant le complexe.</li>
+</ul></div></div>
+<div class="card"><svg id="lr" viewBox="0 0 420 252"></svg>
+<label>Pente w <span id="wv"></span></label><input id="w" type="range" min=".2" max="3" step=".1" value=".6">
+<label>Décalage b <span id="bv"></span></label><input id="b" type="range" min="-4" max="4" step=".1" value="1.8">
+<p class="note" style="min-height:0;margin:0 0 4px">👉 Déplacez <b>b</b> pour centrer la frontière rouge entre les deux couleurs. <b>86 % est le plafond</b> : avec une seule variable, les points −0,6 et 0,8 restent forcément mal classés.</p>
+<div class="stats"><div class="stat">Précision<b id="lra"></b></div><div class="stat">Mal classés<b id="lrc"></b></div><div class="stat">Frontière<b id="lrb"></b></div></div></div></div>
+</div></section>
+
+<!-- 02 · tree -->
+<section class="s"><div class="in">
+<div class="k">02 · Arbre de décision</div>
+<h2>Une cascade de questions <em>oui / non</em></h2>
+<div class="g"><div class="t">
+<div class="f">Gini(G) = 1 − Σ<sub>i</sub> p<sub>i</sub><sup>2</sup> &nbsp;&nbsp;·&nbsp;&nbsp; on retient le découpage qui <i>maximise</i> la baisse de Gini</div>
+<p><b>Principe.</b> À chaque nœud, on pose la question qui sépare le mieux les classes, on coupe, puis on recommence dans chaque morceau. Arrêt : plus d'ambiguïté, ou profondeur atteinte.</p>
+<p>Les frontières sont des <b>rectangles</b> : l'arbre capture les interactions entre variables et se lit comme un organigramme.</p>
+<div class="uses"><h3>Cas d'usage</h3><ul>
+<li><b>Scoring</b> — « si retard &gt; 3 mois <i>et</i> revenu &lt; 2000 → refus ».</li>
+<li><b>Triage médical, maintenance</b> — toute décision doit s'expliquer.</li>
+<li>Pour <b>extraire des règles</b> lisibles par un métier.</li>
+</ul></div></div>
+<div class="card"><canvas id="c1" width="340" height="340" class="cv1"></canvas>
+<label>Profondeur max <span id="dv"></span></label><input id="d" type="range" min="1" max="8" value="2">
+<div class="stats"><div class="stat">Entraînement<b id="dtr"></b></div><div class="stat">Test<b id="dte"></b></div><div class="stat" id="dbox">Écart<b id="dgap"></b></div></div>
+<pre class="rules" id="drules"></pre>
+<p class="note" id="dn"></p></div></div>
+</div></section>
+
+<!-- 03 · forest -->
+<section class="s"><div class="in">
+<div class="k">03 · Random Forest</div>
+<h2>Des arbres différents qui <em>votent</em></h2>
+<div class="g"><div class="t">
+<div class="step"><i>1</i><span><b>Bagging</b> — chaque arbre reçoit un tirage <b>avec remise</b> des données d'entraînement.</span></div>
+<div class="step"><i>2</i><span><b>Décorrélation</b> — à chaque nœud, on n'essaie qu'<b>une seule variable tirée au hasard</b>.</span></div>
+<div class="step"><i>3</i><span><b>Agrégation</b> — vote majoritaire sur les k arbres.</span></div>
+<div class="f">ŷ(x) = mode { y<sub>t</sub> : t = 1…k } &nbsp;&nbsp;·&nbsp;&nbsp; chaque arbre est <b>grand</b> et <b>non élagué</b></div>
+<p>Un arbre seul colle au bruit ; en combinant k arbres <b>indépendants</b>, la variance s'effondre. C'est le principe du <b>bagging</b>.</p>
+<div class="uses"><h3>Cas d'usage</h3><ul>
+<li><b>Référence par défaut</b> sur données tabulaires : peu de réglages, résultats solides.</li>
+<li><b>Kaggle</b>, scoring bancaire, détection de fraude.</li>
+<li>Pour la <b>performance sans réglage</b> ni interprétation fine.</li>
+</ul></div></div>
+<div class="card"><canvas id="c2" width="340" height="340" class="cv2"></canvas>
+<p class="note" style="min-height:0;margin:8px 0 0">👉 Cliquez sur la zone colorée : le <b>diamant</b> est votre point, chaque <b>carré</b> en dessous est le vote d'un arbre.</p>
+<div class="votes" id="vt"></div><p class="note" id="vn" style="min-height:0"></p>
+<label>Nombre d'arbres k <span id="kv"></span></label><input id="k" type="range" min="1" max="30" value="10">
+<div class="stats"><div class="stat">Entraînement<b id="rtr"></b></div><div class="stat">Test<b id="rte"></b></div><div class="stat">Vote au point<b id="rvote"></b></div></div></div></div>
+</div></section>
+
+<!-- 04 · svm -->
+<section class="s"><div class="in">
+<div class="k">04 · SVM (machine à vecteurs de support)</div>
+<h2>La frontière à <em>marge maximale</em></h2>
+<div class="g"><div class="t">
+<div class="f">min ½‖w‖² &nbsp; s.c.&nbsp; y<sub>i</sub>(w·x<sub>i</sub> + b) ≥ 1<br>marge = 2 / ‖w‖ &nbsp;&nbsp;·&nbsp;&nbsp; K(x,z) = ϕ(x)·ϕ(z) &nbsp;: linéaire · polynomial · RBF</div>
+<p><b>Principe.</b> Parmi toutes les droites séparatrices, on retient celle qui <b>maximise la marge</b> — l'écart le plus large entre la frontière et les points les plus proches.</p>
+<p><b>Vecteurs de support</b> : seuls ces points touchent la marge et <b>déterminent entièrement la solution</b>. Tous les autres sont libres.</p>
+<p>Si les classes ne se séparent pas, un <b>noyau</b> projette dans un espace plus grand où une droite suffit : <b>RBF</b>, <b>polynomial</b>.</p>
+<div class="uses"><h3>Cas d'usage</h3><ul>
+<li><b>Peu d'exemples, beaucoup de variables</b> : texte, bio-informatique, génomique.</li>
+<li><b>Frontières nettes</b> : classification de documents, spam.</li>
+</ul></div></div>
+<div class="card"><svg id="sv" viewBox="0 0 480 268"></svg>
+<div style="display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap">
+<button class="btn" id="lift">Ajouter la dimension x² →</button>
+<span class="note" id="sn" style="margin:0">En 1D : aucun point de coupe ne sépare les classes.</span></div></div></div>
+</div></section>
+
+<!-- 05 · comparaison -->
+<section class="s" id="cmp"><div class="in">
+<div class="k">05 · Comparaison</div>
+<h2>Qui gagner ? Ça dépend du <em>critère</em></h2>
+<div class="card"><div class="tabs" id="tabs"></div><div id="bars"></div>
+<p class="note" id="cn" style="font-size:15.5px;color:var(--ink)"></p>
+<div class="mini" id="cm"></div></div>
+</div></section>
+
+<!-- 06 · retenir -->
+<section class="s"><div class="in">
+<div class="k">06 · Conclusion</div>
+<h2>Ce qu'il faut <em>retenir</em></h2>
+<div class="pick">
+<div class="pk k4"><h3><span style="background:var(--coral)"></span>Régression logistique</h3><p>Frontière <b>droite</b>, probabilité calibrée, très interprétable. Le modèle de départ, et et le seul qui reste défendable quand on doit expliquer la décision.</p></div>
+<div class="pk k3"><h3><span style="background:var(--mus)"></span>Arbre de décision</h3><p>Règles lisibles, frontières rectangulaires. Puissant mais <b>instable</b> : une petite variation des données change l'arbre, et il colle au bruit.</p></div>
+<div class="pk k2"><h3><span style="background:var(--teal)"></span>Random Forest</h3><p>La forêt <b>lisse</b> ce que l'arbre exagère. Excellent rapport performance / effort sur données tabulaires, sans réglage.</p></div>
+<div class="pk k5"><h3><span style="background:var(--blue)"></span>SVM</h3><p>Marge maximale, très efficace en <b>grande dimension</b> et sur petits jeux. boîte noire, coûteux à entraîner.</p></div>
+</div>
+<div class="uses" style="margin-top:16px"><h3>Comment choisir ?</h3><ul>
+<li>Il faut <b>expliquer</b> chaque décision → <b>régression logistique</b> ou <b>arbre</b>.</li>
+<li>Il faut la <b>probabilité</b> de l'événement → <b>régression logistique</b> (calibrée).</li>
+<li>Données tabulaires, beaucoup d'exemples, peu de réglage → <b>Random Forest</b>.</li>
+<li>Peu d'exemples, beaucoup de variables (texte, bio) → <b>SVM</b> à noyau.</li>
+</ul></div>
+</div></section>
+
+</div>
+<div class="nav"><button id="pv" aria-label="Précédent">←</button><div class="dots" id="dots"></div><button id="nx" aria-label="Suivant">→</button><span class="ct" id="ct"></span></div>
+
+<script>
+const $=s=>document.querySelector(s),INK='#1d2433',COR='#e4572e',TEAL='#1f8a8a',MUS='#e9b44c',BLU='#3b4a8c';
+let seed=11;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
+
+/* --- jeu de données : deux « lunes » isotropes, ajustées analytiquement au cadre --- */
+const ROT=.4363,SHR=1,NOI=.12,CO=Math.cos(ROT),SI=Math.sin(ROT);
+function fitMap(){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+ for(let i=0;i<=600;i++)for(let c=0;c<2;c++){const t=Math.PI*i/600,raw=t2(c,t);
+  const x=.5+raw[0]*CO-raw[1]*SI,y=.5+raw[0]*SI+raw[1]*CO;
+  x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}
+ x0-=NOI;x1+=NOI;y0-=NOI;y1+=NOI;
+ const lo=.02,hi=.98,s=Math.min((hi-lo)/(x1-x0),(hi-lo)/(y1-y0));
+ return[lo+((hi-lo)-(x1-x0)*s)/2-x0*s,lo+((hi-lo)-(y1-y0)*s)/2-y0*s,s]}
+const t2=(c,t)=>[(((c?1-Math.cos(t):Math.cos(t))+1)/3-.5)*SHR,(((c?.5-Math.sin(t):Math.sin(t))+.5)/1.5-.5)*SHR];
+const[OX,OY,OS]=fitMap();
+function gen(n){const a=[];for(let i=0;i<n;i++){const c=i%2,t=Math.PI*rnd(),q=t2(c,t),
+ nx=.5+q[0]*CO-q[1]*SI,ny=.5+q[0]*SI+q[1]*CO;
+ a.push({x:OX+(nx+(rnd()-.5)*2*NOI)*OS,y:OY+(ny+(rnd()-.5)*2*NOI)*OS,c})}return a}
+const D=gen(90),T=gen(400);
+
+/* --- arbre de décision (Gini) --- */
+const gini=a=>{const n=a.length;if(!n)return 0;const p=a.filter(q=>q.c).length/n;return 2*p*(1-p)};
+function build(P,d,m,r){const n=P.length;if(n<2)return{p:n?P[0].c:0};const p=P.filter(q=>q.c).length/n;
+ if(d>=m||p==0||p==1)return{p};let best=null;
+ for(const f of r&&rnd()<.5?['y','x']:['x','y']){const v=P.map(q=>q[f]).sort((a,b)=>a-b);
+  for(let i=1;i<v.length;i++){if(v[i]===v[i-1])continue;const t=(v[i]+v[i-1])/2,L=P.filter(q=>q[f]<t),R=P.filter(q=>q[f]>=t),
+   g=(L.length*gini(L)+R.length*gini(R))/n;if(!best||g<best.g)best={g,f,t,L,R}}
+  if(r&&best)break}
+ return best?{f:best.f,t:best.t,l:build(best.L,d+1,m,r),r:build(best.R,d+1,m,r)}:{p}}
+const pred=(n,x,y)=>n.f?pred((n.f=='x'?x:y)<n.t?n.l:n.r,x,y):n.p;
+const hits=(fn,S)=>S.filter(q=>(fn(q.x,q.y)>.5)==!!q.c).length;
+const pct=(fn,S)=>Math.round(100*hits(fn,S)/S.length)+'%';
+const NM={x:'x₁',y:'x₂'};
+
+/* --- forêt --- */
+const F=[];for(let i=0;i<30;i++){const B=[];for(let j=0;j<D.length;j++)B.push(D[rnd()*D.length|0]);F.push(build(B,0,8,true))}
+const forest=k=>(x,y)=>F.slice(0,k).reduce((s,t)=>s+(pred(t,x,y)>.5?1:0),0)/k;
+
+/* --- rendu du fond de frontière --- */
+function paint(cv,fn,mark){const g=cv.getContext('2d'),N=60,W=cv.width,s=W/N;
+ for(let i=0;i<N;i++)for(let j=0;j<N;j++){const p=Math.max(0,Math.min(1,fn((i+.5)/N,1-(j+.5)/N)));
+  g.fillStyle=`rgb(${246+(181-246)*p|0},${196+(223-196)*p|0},${179+(220-179)*p|0})`;g.fillRect(i*s,j*s,s+1,s+1)}
+ g.lineWidth=1.6;g.strokeStyle=INK;
+ for(const q of D){g.beginPath();g.arc(q.x*W,(1-q.y)*W,4.4,0,7);g.fillStyle=q.c?TEAL:COR;g.fill();g.stroke()}
+ if(mark){const mx=mark[0]*W,my=(1-mark[1])*W;g.beginPath();g.arc(mx,my,9,0,7);g.fillStyle=MUS;g.fill();
+  g.lineWidth=2.5;g.strokeStyle=INK;g.stroke();
+  g.beginPath();g.moveTo(mx-13,my);g.lineTo(mx+13,my);g.moveTo(mx,my-13);g.lineTo(mx,my+13);g.stroke()}}
+paint($('#c0'),forest(30));
+
+/* 01 · régression logistique ------------------------------------------------ */
+const LP=[[-4.2,0],[-3.5,0],[-3,0],[-2.2,0],[-1.5,0],[-.6,0],[.8,0],[-.9,1],[.3,1],[1,1],[1.8,1],[2.5,1],[3.3,1],[4,1]];
+const LX=x=>30+(x+5)*36,LY=p=>216-p*182,sig=z=>1/(1+Math.exp(-z));
+function lr(){const w=+$('#w').value,b=+$('#b').value;$('#wv').textContent=w.toFixed(1);$('#bv').textContent=b.toFixed(1);
+ let path='';for(let x=-5;x<=5.001;x+=.08)path+=(path?'L':'M')+LX(x).toFixed(1)+' '+LY(sig(w*x+b)).toFixed(1);
+ const xb=-b/w;
+ let h=`<line x1="30" y1="216" x2="396" y2="216" stroke="${INK}" stroke-width="2"/><line x1="30" y1="24" x2="30" y2="216" stroke="${INK}" stroke-width="2"/>`;
+ [-4,-2,0,2,4].forEach(x=>{h+=`<line x1="${LX(x)}" y1="216" x2="${LX(x)}" y2="221" stroke="${INK}" stroke-width="2"/><text x="${LX(x)}" y="234" font-size="10.5" text-anchor="middle" font-family="IBM Plex Mono" fill="${INK}">${x}</text>`});
+ [0,.5,1].forEach(p=>{h+=`<line x1="25" y1="${LY(p)}" x2="30" y2="${LY(p)}" stroke="${INK}" stroke-width="2"/><text x="22" y="${LY(p)+4}" font-size="10.5" text-anchor="end" font-family="IBM Plex Mono" fill="${INK}">${p}</text>`});
+ h+=`<text x="150" y="248" font-size="11" font-family="IBM Plex Mono" fill="#5d6577">x₁</text><text x="6" y="18" font-size="11" font-family="IBM Plex Mono" fill="#5d6577">p</text>`;
+ h+=`<line x1="30" x2="396" y1="${LY(.5)}" y2="${LY(.5)}" stroke="#9aa2b0" stroke-dasharray="3 4"/><text x="392" y="${LY(.5)-6}" font-size="10" text-anchor="end" font-family="IBM Plex Mono" fill="#5d6577">seuil p = 0,5</text>`;
+ h+=`<path d="${path}" fill="none" stroke="${INK}" stroke-width="3.5"/>`;
+ if(xb>-5&&xb<5)h+=`<line x1="${LX(xb).toFixed(1)}" x2="${LX(xb).toFixed(1)}" y1="24" y2="216" stroke="${COR}" stroke-width="3" stroke-dasharray="7 5"/><text x="${(LX(xb)+6).toFixed(1)}" y="34" font-size="11" font-family="IBM Plex Mono" fill="${COR}">frontière</text>`;
+ let ok=0;
+ for(const[x,c]of LP){const good=(sig(w*x+b)>.5)===!!c;ok+=good;
+  h+=`<circle cx="${LX(x)}" cy="${LY(c)}" r="8.5" fill="${c?TEAL:COR}" stroke="${good?INK:COR}" stroke-width="${good?2:2.5}" opacity="${good?1:.28}"/>`;
+  if(!good)h+=`<path d="M${LX(x)-11} ${LY(c)-11}L${LX(x)+11} ${LY(c)+11}M${LX(x)+11} ${LY(c)-11}L${LX(x)-11} ${LY(c)+11}" stroke="${COR}" stroke-width="2" fill="none"/>`}
+ $('#lr').innerHTML=h;
+ $('#lra').textContent=Math.round(100*ok/LP.length)+'%';
+ $('#lrc').textContent=LP.length-ok;
+ $('#lrb').textContent=Math.abs(xb)>5?'hors zone':'x₁ = '+xb.toFixed(1)}
+$('#w').oninput=$('#b').oninput=lr;lr();
+
+/* 02 · arbre de décision ---------------------------------------------------- */
+const SW=[];for(let d=1;d<=8;d++){const t=build(D,0,d,false),f=(x,y)=>pred(t,x,y);
+ SW.push({d,t,f,tr:hits(f,D)/D.length,te:hits(f,T)/T.length})}
+const BD=SW.reduce((a,b)=>b.te>a.te?b:a).d;
+function rules(n,pre,out){if(!n.f){out.push(pre+'classe '+n.p);return out}
+ const q=pre+(NM[n.f]+' < '+n.t.toFixed(2)+' ?');
+ rules(n.l,q+' oui\n'+pre+'      ',out);rules(n.r,q+' non\n'+pre+'      ',out);return out}
+function dt(){const m=+$('#d').value,s=SW[m-1];$('#dv').textContent=m;
+ paint($('#c1'),s.f);
+ $('#dtr').textContent=Math.round(100*s.tr)+'%';$('#dte').textContent=Math.round(100*s.te)+'%';
+ const gap=Math.round(100*(s.tr-s.te));$('#dgap').textContent=(gap>0?'+':'')+gap+' pts';
+ $('#dbox').classList.toggle('warn',gap>=6);
+ const L=rules(s.t,'',[]);
+ $('#drules').textContent=(s.t.f?'Meilleure question à la racine : « '+NM[s.t.f]+' < '+s.t.t.toFixed(2)+' »':'Racine : aucune question')
+  +'\n'+L.slice(0,16).join('\n')+(L.length>16?'\n… ('+L.length+' règles)':'');
+ const n=$('#dn');
+ if(m<BD){n.className='note';n.innerHTML='<b>Sous-apprentissage.</b> Profondeur '+m+' : l’arbre n’a pas assez de questions. Le test s’améliore jusqu’à la profondeur <b>'+BD+'</b> ('+Math.round(100*SW[BD-1].te)+' %).'}
+ else if(m===BD){n.className='note';n.innerHTML='<b>Optimum.</b> Le score de test est à son maximum ('+Math.round(100*s.te)+' %) : c’est la profondeur à retenir.'}
+ else{const b=SW[BD-1];n.className='note bad';
+  n.innerHTML='<b>Surapprentissage.</b> '+m+' questions de plus : l’entraînement passe à '+Math.round(100*s.tr)+' % mais le test retombe à '+Math.round(100*s.te)+' % (−'+(Math.round(100*b.te)-Math.round(100*s.te))+' pts). L’arbre mémorise le bruit.'}}
+$('#d').oninput=dt;dt();
+
+/* 03 · random forest -------------------------------------------------------- */
+let mk=[.5,.5];
+function rf(){const k=+$('#k').value,f=forest(k);$('#kv').textContent=k;paint($('#c2'),f,mk);
+ $('#rtr').textContent=pct(f,D);$('#rte').textContent=pct(f,T);
+ const v=F.slice(0,k).map(t=>pred(t,mk[0],mk[1])>.5),n1=v.filter(Boolean).length;
+ $('#vt').innerHTML=v.map(c=>`<span style="background:${c?TEAL:COR}"></span>`).join('');
+ $('#rvote').textContent=n1+'/'+k+' → '+Math.round(200*n1/k)/2+' %';
+ const dec=n1*2>k?'classe 1':n1*2<k?'classe 0':'égalité';
+ $('#vn').innerHTML=n1+' arbre'+(n1>1?'s':'')+' vote'+(n1>1?'nt':'')+' <b>1</b>, '+(k-n1)+' pour <b>0</b> → <b>'+dec+'</b>'+(n1*2==k?' (tie-break : classe 0)':'')}
+$('#k').oninput=rf;
+$('#c2').onclick=e=>{const r=e.target.getBoundingClientRect();
+ mk=[(e.clientX-r.left)/r.width,1-(e.clientY-r.top)/r.height];rf()};rf();
+
+/* 04 · svm ------------------------------------------------------------------ */
+const SA=[-1.4,-.9,-.4,.1,.6,1,1.4],SB=[-2.9,-2.6,-2.3,2.3,2.7,3],SV=[-2.3,-1.4,1.4,2.3];
+const SX=x=>240+x*66,SY=z=>216-z*17.5,B0=((1.4**2+2.3**2)/2),BL=1.4**2,BH=2.3**2;
+let up=false;
+function sv(){let h='';
+ h+=`<path id="par" d="${Array.from({length:49},(_,i)=>{const x=-3.2+i*.1333;return(i?'L':'M')+(240+x*66).toFixed(1)+' '+SY(x*x).toFixed(1)}).join('')}" fill="none" stroke="#9aa2b0" stroke-width="2" stroke-dasharray="5 4" opacity="0"/>`;
+ h+=`<rect id="band" x="14" width="452" y="${SY(BH).toFixed(1)}" height="${(SY(BL)-SY(BH)).toFixed(1)}" fill="${MUS}" opacity="0"/>`;
+ h+=`<line id="ln" x1="14" x2="466" y1="${SY(B0).toFixed(1)}" y2="${SY(B0).toFixed(1)}" stroke="${INK}" stroke-width="3" opacity="0"/>`;
+ h+=`<line x1="14" x2="466" y1="216" y2="216" stroke="${INK}" stroke-width="2"/>`;
+ h+=`<text x="466" y="234" font-size="11" text-anchor="end" font-family="IBM Plex Mono" fill="#5d6577">x₁</text><text id="ax2" x="14" y="234" font-size="11" font-family="IBM Plex Mono" fill="#5d6577">x₁</text>`;
+ h+=`<text id="lab" x="240" y="256" font-size="11" text-anchor="middle" font-family="IBM Plex Mono" fill="#5d6577">espace 1D — x₂ absent</text>`;
+ for(const[x,c]of[...SA.map(x=>[x,0]),...SB.map(x=>[x,1])]){const s=SV.includes(x);
+  h+=`<circle class="pt" data-x="${x}" cx="${SX(x)}" cy="216" r="9" fill="${c?TEAL:COR}" stroke="${INK}" stroke-width="${s?4:2}"/>`}
+ $('#sv').innerHTML=h}
+sv();
+let raf,rafT;
+function svSet(s,pts,y,o){pts.forEach((p,i)=>p.setAttribute('cy',y[i].toFixed(1)));
+ ['#par','#ln'].forEach(i=>s.querySelector(i).setAttribute('opacity',o.toFixed(3)));
+ s.querySelector('#band').setAttribute('opacity',(o*.4).toFixed(3))}
+$('#lift').onclick=()=>{up=!up;cancelAnimationFrame(raf);clearTimeout(rafT);
+ const s=$('#sv'),pts=[...s.querySelectorAll('.pt')],from=pts.map(p=>+p.getAttribute('cy')),
+ to=pts.map(p=>up?SY((+p.dataset.x)**2):216),
+ o0=+s.querySelector('#ln').getAttribute('opacity'),o1=up?1:0,t0=performance.now();
+ s.querySelector('#ax2').setAttribute('y',up?'26':'234');
+ s.querySelector('#ax2').textContent=up?'x\u2082 = x\u2081\u00b2':'x\u2081';
+ s.querySelector('#lab').textContent=up?'espace 2D \u2014 les deux classes se séparent par une droite':'espace 1D \u2014 x\u2082 absent';
+ const step=t=>{const k=Math.min(1,Math.max(0,(t-t0)/750)),e=k<.5?2*k*k:1-2*(1-k)**2;
+  svSet(s,pts,from.map((v,i)=>v+(to[i]-v)*e),o0+(o1-o0)*e);
+  if(k<1)raf=requestAnimationFrame(step)};
+ raf=requestAnimationFrame(step);
+ rafT=setTimeout(()=>{cancelAnimationFrame(raf);svSet(s,pts,to,o1)},820);
+ $('#lift').textContent=up?'\u2190 Revenir en 1D':'Ajouter la dimension x\u00b2 \u2192';
+ $('#sn').innerHTML=up?'<b>2D :</b> une droite sépare les classes. La marge va de x\u2081\u00b2 = 1,96 \u00e0 5,29 (largeur 3,33). Les <b>4 points cercl\u00e9s</b> sont les vecteurs de support : ce sont les seuls qui touchent la marge et qui d\u00e9terminent la solution.':'En 1D : aucun point de coupe ne s\u00e9pare les classes \u2014 il faut <b>augmenter la dimension</b>.'};
+
+/* 05 · comparaison ---------------------------------------------------------- */
+const M=[['Rég. logistique',COR],['Arbre de décision',MUS],['Random Forest',TEAL],['SVM',BLU]];
+const C=[
+['Interprétabilité',[5,5,2,1],'Régression logistique : une liste de coefficients. Arbre : des règles « si… alors ». Forêt et noyau : des centaines de modèles agrégés — illisibles.'],
+['Performance',[3,3,5,4],'Sur données tabulaires, la forêt gagne : elle combine des dizaines d’arbres et annule le bruit. Le SVM rivalise quand les variables sont nombreuses et les exemples rares.'],
+['Complexité',[4,5,2,1],'Barre haute = rapide à entraîner. Régression : O(n·d·itérations). Arbre : O(n log n). Forêt : × k arbres. SVM à noyau : O(n²) à O(n³) — le plus cher, le plus lent.'],
+['Robustesse au bruit',[3,1,5,3],'Un arbre seul colle au bruit (le surapprentissage est visible sur la diapositive 02). La moyenne de 30 arbres le lisse : c’est tout l’intérêt du bagging.']];
+function cmp(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',i==j));
+ $('#bars').innerHTML=M.map((m,j)=>`<div class="row"><span>${m[0]}</span><div class="tr"><div class="fl" style="background:${m[1]}"></div></div><b>${C[i][1][j]}/5</b></div>`).join('');
+ requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('.fl').forEach((f,j)=>f.style.width=C[i][1][j]*20+'%')));
+ $('#cn').textContent=C[i][2]}
+$('#tabs').innerHTML=C.map((c,i)=>`<button class="tab" onclick="cmp(${i})">${c[0]}</button>`).join('');
+$('#cm').innerHTML='Mesuré sur le jeu de démonstration (90 points d\'entraînement, 400 de test) : arbre seul <b>'+Math.round(100*SW[BD-1].te)+' %</b> au mieux · forêt de 30 arbres <b>'+pct(forest(30),T)+'</b>.';
+cmp(0);
+
+/* navigation --------------------------------------------------------------- */
+const SS=[...document.querySelectorAll('.s')],N=SS.length,CMP=SS.findIndex(s=>s.id=='cmp');
+let cur=0;
+$('#dots').innerHTML=SS.map((_,i)=>`<i onclick="go(${i})"></i>`).join('');
+function go(i){cur=Math.max(0,Math.min(N-1,i));
+ $('#deck').style.transform=`translateX(-${cur*100}%)`;
+ document.querySelectorAll('.dots i').forEach((d,j)=>d.classList.toggle('on',j==cur));
+ $('#ct').textContent=(cur+1)+' / '+N;
+ if(cur==CMP)cmp(0)}
+$('#pv').onclick=()=>go(cur-1);$('#nx').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{const k=e.key;
+ if(k=='ArrowRight'||k==' '||k=='PageDown'){e.preventDefault();go(cur+1)}
+ else if(k=='ArrowLeft'||k=='PageUp'){e.preventDefault();go(cur-1)}
+ else if(k=='Home')go(0);else if(k=='End')go(N-1)});
+let tx=0;addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>55)go(cur+(d<0?1:-1))},{passive:true});
+go(0);
+</script>
+</body>
+</html>
